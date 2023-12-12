@@ -82,6 +82,18 @@ function filterExample(arr) {
 }
 filterExample([1, 2, 3, 4, 5]);
 
+// Reduce
+function reduceExample(arr){
+  // I'll find max value using reduce
+  let maxVal = arr.reduce((acc, curr) => {
+    acc = Math.max(acc, curr);
+    return acc
+  }, -1e9)
+
+  console.log(maxVal);
+}
+reduceExample([2, 4, -10, 4, 8, 9]);
+
 // find()
 function findExample(arr) {
   console.log("Original Array:", arr);
