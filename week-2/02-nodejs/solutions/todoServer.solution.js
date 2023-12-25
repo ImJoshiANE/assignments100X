@@ -32,62 +32,86 @@
     - For any other route not defined in the server return 404
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  let todos = [];
-  
-  app.get('/todos', (req, res) => {
-    res.json(todos);
+
+const { error } = require("console");
+const express = require("express");
+const app = express();
+
+const fs = require("fs");
+const path = "../files/todo.json";
+
+const port = 3000; // Port to tune server
+app.use(express.json()); // To parse json data
+
+// Core To-Do Functionlities
+
+let todo = []; // In memory to do array of json objects
+
+fs.readFile(path, "utf-8", (err, data) => {
+  todo = JSON.parse(data);
+}); // read and update todo variable
+
+app.get("/todos", (req, res) => {
+  res.status(200).json(todo);
+}); // Serving get request for all todos
+
+app.post("/todos", (req, res) => {
+  if (!req.body.title || !req.body.description) {
+    res.status(400).json({
+      error: "Not a valid todo Format!",
+    });
+    return;
+  }
+
+  req.completed = false;
+  req.body.id = Math.floor(Math.random() * 1000 * Math.random() + 10);
+  todo.push(req.body);
+
+  fs.writeFile(path, JSON.stringify(todo), "utf-8", () => {});
+  res.status(201).json(todo);
+});
+
+app.get("/todos/:id", (req, res) => {
+  const id = req.params.id;
+  console.log(id);
+
+  const result = todo.filter((obj) => {
+    // console.log(obj);
+    return obj.id == id;
   });
-  
-  app.get('/todos/:id', (req, res) => {
-    const todo = todos.find(t => t.id === parseInt(req.params.id));
-    if (!todo) {
-      res.status(404).send();
-    } else {
-      res.json(todo);
+
+  console.log(result);
+
+  res.status(200).json(result);
+});
+
+app.put("/todos/:id", (req, res) => {
+  const id = req.params.id;
+
+  todo = todo.map((obj) => {
+    if (obj.id == id) {
+      obj.completed = true;
     }
+    return obj;
   });
-  
-  app.post('/todos', (req, res) => {
-    const newTodo = {
-      id: Math.floor(Math.random() * 1000000), // unique random id
-      title: req.body.title,
-      description: req.body.description
-    };
-    todos.push(newTodo);
-    res.status(201).json(newTodo);
-  });
-  
-  app.put('/todos/:id', (req, res) => {
-    const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
-    if (todoIndex === -1) {
-      res.status(404).send();
-    } else {
-      todos[todoIndex].title = req.body.title;
-      todos[todoIndex].description = req.body.description;
-      res.json(todos[todoIndex]);
-    }
-  });
-  
-  app.delete('/todos/:id', (req, res) => {
-    const todoIndex = todos.findIndex(t => t.id === parseInt(req.params.id));
-    if (todoIndex === -1) {
-      res.status(404).send();
-    } else {
-      todos.splice(todoIndex, 1);
-      res.status(200).send();
-    }
-  });
-  
-  // for all other routes, return 404
-  app.use((req, res, next) => {
-    res.status(404).send();
-  });
-  
-  module.exports = app;
+
+  fs.writeFile(path, JSON.stringify(todo), "utf-8", () => {});
+  res.status(201).json(todo);
+});
+
+app.delete("/todos/:id", (req, res) => {
+  const id = req.params.id;
+
+  todo = todo.filter((obj) => obj.id != id);
+
+  fs.writeFile(path, JSON.stringify(todo), "utf-8", () => {});
+  res.status(201).json(todo);
+});
+
+app.get("/*", (req, res) => {
+  res.status(404).send("Route not found");
+});
+
+app.listen(port, () => {
+  console.log("Server Started at the port 3000!");
+});
